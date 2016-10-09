@@ -33,8 +33,34 @@ function init(board, options, callback) {
 }
 
 // Move the servos
-function move (destinations, callback) {
+function move(destinations, callback) {
 
+  // Find largest servo angle change
+  var largestChange = 0;
+  for (var servo in destinations) {
+    var delta = Math.abs(destinations[servo] - positions[servo]);
+    if (delta > largestChange) {
+      largestChange = delta;
+    }
+  }
+
+  // If none of servos need to move, end here
+  if (largestChange === 0) {
+    process.nextTick(callback);
+    return;
+  }
+
+  // Calculate how long we should take to move
+  var duration = largestChange / opts.rate;
+
+  // Move servos to destinations
+  for (servo in destinations) {
+    positions[servo] = destinations[servo];
+    servos[servo].to(destinations[servo], duration);
+  }
+
+  // Wait until done to and call the callback function
+  setTimeout(callback, duration + opts.settleTime);
 }
 
 // Export the public methods
